@@ -21,11 +21,20 @@ contract Multisig {
         uint amount
     );
     event TransactionConfirmed(uint transactionId, address owner);
+    event TransactionExecuted(uint transactionId);
 
-    constructor(address[] memory _owners, uint _confarmations) {
+    modifier checkTransactionId(uint _transactionId) {
+        require(
+            _transactionId < transactions.length,
+            "This transaction does not exist"
+        );
+        _;
+    }
+
+    constructor(address[] memory _owners, uint _numConfirmations) {
         require(_owners.length > 1, "Contract must have more than one owner");
         require(
-            _confarmations > 0 && _confarmations <= _owners.length,
+            _numConfirmations > 0 && _numConfirmations <= _owners.length,
             "Confarmations are not in sync with the number of owners"
         );
 
@@ -34,7 +43,7 @@ contract Multisig {
             owners.push(_owners[i]);
         }
 
-        confarmations = _confarmations;
+        numConfarmations = _numConfirmations;
     }
 
     function submitTransaction(address _to) public payable {
@@ -49,26 +58,20 @@ contract Multisig {
         emit TransactionSubmitted(transactionId, msg.sender, _to, msg.value);
     }
 
-    function confirmTransaction(uint _transactionId) public {
-        require(
-            _transactionId < transactions.length,
-            "This transaction does not exist"
-        );
-        require(
-            !isConfirmed[_transactionId][msg.sender],
-            "This user has already confirmed the transaction"
-        );
+    function confirmTransaction(
+        uint _transactionId
+    ) public checkTransactionId(_transactionId) {
         isConfirmed[_transactionId][msg.sender] = true;
-
         emit TransactionConfirmed(_transactionId, msg.sender);
+
+        if (isTransactionConfirmed(_transactionId)) {
+            executTransaction(_transactionId);
+        }
     }
 
-    function isTransactionConfirmed(uint _transactionId) public returns (bool) {
-        require(
-            _transactionId < transactions.length,
-            "This transaction does not exist"
-        );
-
+    function isTransactionConfirmed(
+        uint _transactionId
+    ) internal view checkTransactionId(_transactionId) returns (bool) {
         uint confirms;
 
         for (uint i = 0; i < owners.length; i++) {
@@ -78,5 +81,21 @@ contract Multisig {
         }
 
         return confirms >= numConfarmations;
+    }
+
+    function executTransaction(
+        uint _transactionId
+    ) internal checkTransactionId(_transactionId) {
+        require(
+            !transactions[_transactionId].executed,
+            "The transaction has already been executed"
+        );
+        transactions[_transactionId].executed = true;
+        (bool success, ) = transactions[_transactionId].to.call{
+            value: transactions[_transactionId].value
+        }("");
+
+        require(success, "Transaction execution failed");
+        emit TransactionExecuted(_transactionId);
     }
 }
