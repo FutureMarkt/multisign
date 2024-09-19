@@ -1,4 +1,6 @@
-pragma solidity ^0.4.15;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.24;
+
 import "./Factory.sol";
 import "./Wallet.sol";
 
@@ -11,12 +13,13 @@ contract WalletFactory is Factory {
     /// @dev Allows verified creation of multisignature wallet.
     /// @param _owners List of initial owners.
     /// @param _required Number of required confirmations.
-    /// @return Returns wallet address.
+    /// @return walletAddres Returns wallet address.
     function create(
-        address[] _owners,
+        address[] memory _owners,
         uint _required
-    ) public returns (address wallet) {
+    ) public returns (address walletAddres) {
         Wallet wallet = new Wallet(_owners, _required);
-        register(wallet);
+        walletAddres = address(wallet);
+        register(walletAddres);
     }
 }

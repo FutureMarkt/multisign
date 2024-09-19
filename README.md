@@ -1,13 +1,11 @@
-# Sample Hardhat Project
+# Multisign Wallet
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+This repository is the open-source code for the Multisign Wallet. The code was developed by the Future Markt team.
 
 Try running some of the following tasks:
 
 ```shell
-npx hardhat help
+npm i
+npx hardhat compile
 npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
 ```
