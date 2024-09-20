@@ -55,7 +55,12 @@ contract Wallet {
 
         uint transactionId = transactions.length;
         transactions.push(
-            Transaction({to: _to, value: msg.value, tkoen: _token executed: false})
+            Transaction({
+                to: _to,
+                value: msg.value,
+                token: _token,
+                executed: false
+            })
         );
 
         emit TransactionSubmitted(transactionId, msg.sender, _to, msg.value);
@@ -94,12 +99,16 @@ contract Wallet {
             "The transaction has already been executed"
         );
         transactions[_transactionId].executed = true;
+        uint value = transactions[_transactionId].value;
 
         IERC20 token = IERC20(transactions[_transactionId].token);
         uint256 contractBalance = token.balanceOf(address(this));
-        require(contractBalance >= amount, "Not enough tokens on the contract");
-        
-        require(token.transfer(recipient, amount), "Token transfer failed");
+        require(contractBalance >= value, "Not enough tokens on the contract");
+
+        require(
+            token.transfer(transactions[_transactionId].to, value),
+            "Token transfer failed"
+        );
         emit TransactionExecuted(_transactionId);
     }
 }
