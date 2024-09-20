@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 contract Wallet {
     address[] public owners;
     uint public numConfarmations;
@@ -8,6 +10,7 @@ contract Wallet {
     struct Transaction {
         address to;
         uint value;
+        address token;
         bool executed;
     }
 
@@ -22,7 +25,6 @@ contract Wallet {
     );
     event TransactionConfirmed(uint transactionId, address owner);
     event TransactionExecuted(uint transactionId);
-    event Received(address from, uint value);
 
     modifier checkTransactionId(uint _transactionId) {
         require(
@@ -47,13 +49,13 @@ contract Wallet {
         numConfarmations = _numConfirmations;
     }
 
-    function submitTransaction(address _to) public payable {
+    function submitTransaction(address _to, address _token) public payable {
         require(_to != address(0), "Invalid reciver address");
         require(msg.value > 0, "The amount of ETH must be more than zero");
 
         uint transactionId = transactions.length;
         transactions.push(
-            Transaction({to: _to, value: msg.value, executed: false})
+            Transaction({to: _to, value: msg.value, tkoen: _token executed: false})
         );
 
         emit TransactionSubmitted(transactionId, msg.sender, _to, msg.value);
@@ -92,15 +94,12 @@ contract Wallet {
             "The transaction has already been executed"
         );
         transactions[_transactionId].executed = true;
-        (bool success, ) = transactions[_transactionId].to.call{
-            value: transactions[_transactionId].value
-        }("");
 
-        require(success, "Transaction execution failed");
+        IERC20 token = IERC20(transactions[_transactionId].token);
+        uint256 contractBalance = token.balanceOf(address(this));
+        require(contractBalance >= amount, "Not enough tokens on the contract");
+        
+        require(token.transfer(recipient, amount), "Token transfer failed");
         emit TransactionExecuted(_transactionId);
-    }
-
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
     }
 }
