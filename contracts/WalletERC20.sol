@@ -25,6 +25,7 @@ contract Wallet {
     );
     event TransactionConfirmed(uint transactionId, address owner);
     event TransactionExecuted(uint transactionId);
+    event Received(address from, uint value);
 
     modifier checkTransactionId(uint _transactionId) {
         require(
@@ -110,5 +111,9 @@ contract Wallet {
             "Token transfer failed"
         );
         emit TransactionExecuted(_transactionId);
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 }
