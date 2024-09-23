@@ -25,7 +25,6 @@ contract Wallet {
     );
     event TransactionConfirmed(uint transactionId, address owner);
     event TransactionExecuted(uint transactionId);
-    event Received(address from, uint value);
 
     modifier checkTransactionId(uint _transactionId) {
         require(
@@ -50,16 +49,23 @@ contract Wallet {
         numConfarmations = _numConfirmations;
     }
 
-    function submitTransaction(address _to, address _token) public payable {
+    function submitTransaction(
+        address _to,
+        IERC20 _token,
+        uint _value
+    ) public payable {
         require(_to != address(0), "Invalid reciver address");
-        require(msg.value > 0, "The amount of ETH must be more than zero");
+        require(
+            _token.balanceOf(address(this)) >= _value,
+            "Insufficient funds"
+        );
 
         uint transactionId = transactions.length;
         transactions.push(
             Transaction({
                 to: _to,
-                value: msg.value,
-                token: _token,
+                value: _value,
+                token: address(_token),
                 executed: false
             })
         );
@@ -111,9 +117,5 @@ contract Wallet {
             "Token transfer failed"
         );
         emit TransactionExecuted(_transactionId);
-    }
-
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
     }
 }
