@@ -25,7 +25,6 @@ contract Wallet {
     );
     event TransactionConfirmed(uint transactionId, address owner);
     event TransactionExecuted(uint transactionId);
-    event Received(address from, uint value);
 
     modifier checkTransactionId(uint _transactionId) {
         require(
@@ -52,15 +51,23 @@ contract Wallet {
 
     function submitTransaction(
         address _to,
-        address _token,
+        IERC721 _token,
         uint _id
     ) public payable {
         require(_to != address(0), "Invalid reciver address");
-        // ToDo: Chake the existence of an NFT
+        require(
+            _token.getApproved(_id) == address(this),
+            " The wallet cant't transfer this NFT"
+        );
 
         uint transactionId = transactions.length;
         transactions.push(
-            Transaction({to: _to, id: _id, token: _token, executed: false})
+            Transaction({
+                to: _to,
+                id: _id,
+                token: address(_token),
+                executed: false
+            })
         );
 
         emit TransactionSubmitted(transactionId, msg.sender, _to, _id);
@@ -69,8 +76,6 @@ contract Wallet {
     function confirmTransaction(
         uint _transactionId
     ) public checkTransactionId(_transactionId) {
-        // ToDo: Chake the existence of an NFT
-
         isConfirmed[_transactionId][msg.sender] = true;
         emit TransactionConfirmed(_transactionId, msg.sender);
 
@@ -105,11 +110,11 @@ contract Wallet {
 
         IERC721 token = IERC721(transactions[_transactionId].token);
 
-        token.transferFrom(address(this), transactions[_transactionId].to, id);
+        token.safeTransferFrom(
+            address(this),
+            transactions[_transactionId].to,
+            id
+        );
         emit TransactionExecuted(_transactionId);
-    }
-
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
     }
 }
