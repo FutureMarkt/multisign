@@ -3,6 +3,10 @@ interface WalletProps {
 }
 
 const Wallet: React.FC<WalletProps> = ({ text = "hi" }) => {
-  return <h1>{text}</h1>;
+  return (
+    <h1>
+      <w3m-button />
+    </h1>
+  );
 };
 export default Wallet;
